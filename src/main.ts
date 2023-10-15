@@ -17,7 +17,8 @@ clearButton.innerHTML = "clear";
 app.append(clearButton);
 
 clearButton.addEventListener("click", () => {
-  ctx!.clearRect(0, 0, canvas.width, canvas.height);
+  lines.splice(0, lines.length);
+  canvas.dispatchEvent(drawingChangedEvent);
 });
 
 // div to seperate elements
@@ -46,26 +47,59 @@ function getMouseY(canvas: HTMLCanvasElement, e: MouseEvent) {
 // cursor object
 const cursor = { active: false, x: 0, y: 0 };
 
-// mpuse event to start drawing
+// list of lines to be drawn each "drawing-changed" event
+const lines: { x: number; y: number }[][] = [];
+let currLine: { x: number; y: number }[] | null = null;
+
+// redraws canvas on drawing changed event
+const drawingChangedEvent = new Event("drawing-changed");
+
+canvas.addEventListener("drawing-changed", () => {
+  redraw();
+});
+
+function redraw() {
+  ctx!.clearRect(0, 0, canvas.width, canvas.height);
+  for (const line of lines) {
+    if (line.length > 1) {
+      ctx!.beginPath();
+      const { x, y } = line[0];
+      ctx!.moveTo(x, y);
+      for (const { x, y } of line) {
+        ctx!.lineTo(x, y);
+      }
+      ctx!.stroke();
+    }
+  }
+}
+
+// mouse event to start drawing
 canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = getMouseX(canvas, e);
   cursor.y = getMouseY(canvas, e);
+  currLine = [];
+  lines.push(currLine);
+  currLine.push({ x: cursor.x, y: cursor.y });
+
+  canvas.dispatchEvent(drawingChangedEvent);
 });
 
 // mouse event to track mouse path and draw on canvas
 canvas.addEventListener("mousemove", (e) => {
   if (cursor.active) {
-    ctx!.beginPath();
-    ctx!.moveTo(cursor.x, cursor.y);
-    ctx!.lineTo(getMouseX(canvas, e), getMouseY(canvas, e));
-    ctx!.stroke();
     cursor.x = getMouseX(canvas, e);
     cursor.y = getMouseY(canvas, e);
+    currLine!.push({ x: cursor.x, y: cursor.y });
+
+    canvas.dispatchEvent(drawingChangedEvent);
   }
 });
 
 // mouse event to stop drawing
 canvas.addEventListener("mouseup", () => {
   cursor.active = false;
+  currLine = null;
+
+  canvas.dispatchEvent(drawingChangedEvent);
 });
