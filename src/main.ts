@@ -87,11 +87,12 @@ canvas.addEventListener("drawing-changed", () => {
 function redraw() {
   ctx!.clearRect(0, 0, canvas.width, canvas.height);
   for (const line of lines) {
-    if (line.length > 1) {
+    if (line.length) {
       ctx!.beginPath();
-      const { x, y } = line[0];
+      const [firstPoint, ...remainingPoints] = line;
+      const { x, y } = firstPoint;
       ctx!.moveTo(x, y);
-      for (const { x, y } of line) {
+      for (const { x, y } of remainingPoints) {
         ctx!.lineTo(x, y);
       }
       ctx!.stroke();
