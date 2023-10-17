@@ -93,7 +93,30 @@ const ctx = canvas.getContext("2d");
 const rect = canvas.getBoundingClientRect();
 
 // cursor object
-const cursor = { active: false, x: 0, y: 0 };
+let cursor: Cursor | null = null;
+
+class Cursor {
+  x: number;
+  y: number;
+  size: number;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+    this.size = markerThickness * 3 + 10;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    this.size = markerThickness * 3 + 10;
+    ctx.font = this.size + "px monospace";
+    ctx.fillText("⚬", this.x - this.size / 4, this.y + this.size / 2);
+  }
+}
+
+// list of lines to be drawn each "drawing-changed" event
+const lines: Line[] = [];
+let currLine: Line | null = null;
+const redoLines: Line[] = [];
 
 // line class (holds array of points with a display and drag method)
 class Line {
@@ -134,31 +157,41 @@ function getMouseY(canvas: HTMLCanvasElement, e: MouseEvent) {
   return ((e.clientY - rect.top) / rect.height) * canvas.height;
 }
 
-// list of lines to be drawn each "drawing-changed" event
-const lines: Line[] = [];
-let currLine: Line | null = null;
-const redoLines: Line[] = [];
-
 // redraws canvas on drawing changed event
 const drawingChangedEvent = new Event("drawing-changed");
+const toolMovedEvent = new Event("tool-moved");
 
 canvas.addEventListener("drawing-changed", () => {
   redraw();
 });
 
+canvas.addEventListener("tool-moved", () => {
+  redraw();
+});
+
 function redraw() {
   ctx!.clearRect(canvasCorner, canvasCorner, canvas.width, canvas.height);
+  cursor?.draw(ctx!);
   for (const line of lines) {
     line.display(ctx!);
   }
 }
 
+canvas.addEventListener("mouseout", () => {
+  cursor = null;
+  canvas.dispatchEvent(toolMovedEvent);
+});
+
+canvas.addEventListener("mouseenter", (e) => {
+  cursor = new Cursor(getMouseX(canvas, e), getMouseY(canvas, e));
+  canvas.dispatchEvent(toolMovedEvent);
+});
+
 // mouse event to start drawing
 canvas.addEventListener("mousedown", (e) => {
-  cursor.active = true;
-  cursor.x = getMouseX(canvas, e);
-  cursor.y = getMouseY(canvas, e);
-  currLine = new Line(cursor.x, cursor.y, markerThickness);
+  cursor!.x = getMouseX(canvas, e);
+  cursor!.y = getMouseY(canvas, e);
+  currLine = new Line(cursor!.x, cursor!.y, markerThickness);
   lines.push(currLine);
   redoLines.splice(firstIndex, redoLines.length);
 
@@ -167,10 +200,10 @@ canvas.addEventListener("mousedown", (e) => {
 
 // mouse event to track mouse path and draw on canvas
 canvas.addEventListener("mousemove", (e) => {
-  if (cursor.active) {
+  if (cursor) {
     cursor.x = getMouseX(canvas, e);
     cursor.y = getMouseY(canvas, e);
-    currLine!.drag(cursor.x, cursor.y);
+    currLine?.drag(cursor.x, cursor.y);
 
     canvas.dispatchEvent(drawingChangedEvent);
   }
@@ -178,7 +211,6 @@ canvas.addEventListener("mousemove", (e) => {
 
 // mouse event to stop drawing
 document.addEventListener("mouseup", () => {
-  cursor.active = false;
   currLine = null;
 
   canvas.dispatchEvent(drawingChangedEvent);

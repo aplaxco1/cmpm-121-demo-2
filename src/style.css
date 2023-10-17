@@ -42,6 +42,7 @@ h1 {
   width: 256px;
   border: black 3px solid;
   border-radius: 25px;
+  cursor: none;
 }
 
 #app {
