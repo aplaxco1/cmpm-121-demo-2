@@ -3,6 +3,8 @@ import "./style.css";
 const app: HTMLDivElement = document.querySelector("#app")!;
 
 const gameName = "Autumn's Sketch Pad";
+const firstIndex = 0;
+const canvasCorner = 0;
 
 document.title = gameName;
 
@@ -17,7 +19,7 @@ clearButton.innerHTML = "clear";
 app.append(clearButton);
 
 clearButton.addEventListener("click", () => {
-  lines.splice(0, lines.length);
+  lines.splice(firstIndex, lines.length);
   canvas.dispatchEvent(drawingChangedEvent);
 });
 
@@ -27,7 +29,7 @@ undoButton.innerHTML = "undo";
 app.append(undoButton);
 
 undoButton.addEventListener("click", () => {
-  if (lines.length > 0) {
+  if (lines.length) {
     redoLines.push(lines.pop()!);
     canvas.dispatchEvent(drawingChangedEvent);
   }
@@ -39,7 +41,7 @@ redoButton.innerHTML = "redo";
 app.append(redoButton);
 
 redoButton.addEventListener("click", () => {
-  if (redoLines.length > 0) {
+  if (redoLines.length) {
     lines.push(redoLines.pop()!);
     canvas.dispatchEvent(drawingChangedEvent);
   }
@@ -59,6 +61,35 @@ app.append(canvas);
 const ctx = canvas.getContext("2d");
 const rect = canvas.getBoundingClientRect();
 
+// cursor object
+const cursor = { active: false, x: 0, y: 0 };
+
+// line class (holds array of points with a display and drag method)
+class Line {
+  points: { x: number; y: number }[];
+
+  constructor(x: number, y: number) {
+    this.points = [{ x, y }];
+  }
+
+  drag(x: number, y: number) {
+    this.points.push({ x, y });
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    if (this.points.length) {
+      ctx.beginPath();
+      const [firstPoint, ...remainingPoints] = this.points;
+      const { x, y } = firstPoint;
+      ctx.moveTo(x, y);
+      for (const { x, y } of remainingPoints) {
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
 // calculates mouse X position on canvas
 function getMouseX(canvas: HTMLCanvasElement, e: MouseEvent) {
   return ((e.clientX - rect.left) / rect.width) * canvas.width;
@@ -69,13 +100,10 @@ function getMouseY(canvas: HTMLCanvasElement, e: MouseEvent) {
   return ((e.clientY - rect.top) / rect.height) * canvas.height;
 }
 
-// cursor object
-const cursor = { active: false, x: 0, y: 0 };
-
 // list of lines to be drawn each "drawing-changed" event
-const lines: { x: number; y: number }[][] = [];
-let currLine: { x: number; y: number }[] | null = null;
-const redoLines: { x: number; y: number }[][] = [];
+const lines: Line[] = [];
+let currLine: Line | null = null;
+const redoLines: Line[] = [];
 
 // redraws canvas on drawing changed event
 const drawingChangedEvent = new Event("drawing-changed");
@@ -85,18 +113,9 @@ canvas.addEventListener("drawing-changed", () => {
 });
 
 function redraw() {
-  ctx!.clearRect(0, 0, canvas.width, canvas.height);
+  ctx!.clearRect(canvasCorner, canvasCorner, canvas.width, canvas.height);
   for (const line of lines) {
-    if (line.length) {
-      ctx!.beginPath();
-      const [firstPoint, ...remainingPoints] = line;
-      const { x, y } = firstPoint;
-      ctx!.moveTo(x, y);
-      for (const { x, y } of remainingPoints) {
-        ctx!.lineTo(x, y);
-      }
-      ctx!.stroke();
-    }
+    line.display(ctx!);
   }
 }
 
@@ -105,10 +124,9 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = getMouseX(canvas, e);
   cursor.y = getMouseY(canvas, e);
-  currLine = [];
+  currLine = new Line(cursor.x, cursor.y);
   lines.push(currLine);
-  redoLines.splice(0, redoLines.length);
-  currLine.push({ x: cursor.x, y: cursor.y });
+  redoLines.splice(firstIndex, redoLines.length);
 
   canvas.dispatchEvent(drawingChangedEvent);
 });
@@ -118,14 +136,14 @@ canvas.addEventListener("mousemove", (e) => {
   if (cursor.active) {
     cursor.x = getMouseX(canvas, e);
     cursor.y = getMouseY(canvas, e);
-    currLine!.push({ x: cursor.x, y: cursor.y });
+    currLine!.drag(cursor.x, cursor.y);
 
     canvas.dispatchEvent(drawingChangedEvent);
   }
 });
 
 // mouse event to stop drawing
-canvas.addEventListener("mouseup", () => {
+document.addEventListener("mouseup", () => {
   cursor.active = false;
   currLine = null;
 
