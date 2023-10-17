@@ -2,9 +2,13 @@ import "./style.css";
 
 const app: HTMLDivElement = document.querySelector("#app")!;
 
+// global variables
 const gameName = "Autumn's Sketch Pad";
 const firstIndex = 0;
 const canvasCorner = 0;
+const thinMarker = 1;
+const thickMarker = 4;
+let markerThickness = thinMarker;
 
 document.title = gameName;
 
@@ -52,6 +56,33 @@ const div = document.createElement("div");
 div.innerHTML = `<br>`;
 app.append(div);
 
+// marker buttons //
+const thinMarkerButton = document.createElement("button");
+thinMarkerButton.innerHTML = "thin";
+thinMarkerButton.classList.add("selectedTool");
+app.append(thinMarkerButton);
+
+thinMarkerButton.addEventListener("click", () => {
+  thickMarkerButton.classList.remove("selectedTool");
+  thinMarkerButton.classList.add("selectedTool");
+  markerThickness = thinMarker;
+});
+
+const thickMarkerButton = document.createElement("button");
+thickMarkerButton.innerHTML = "thick";
+app.append(thickMarkerButton);
+
+thickMarkerButton.addEventListener("click", () => {
+  thinMarkerButton.classList.remove("selectedTool");
+  thickMarkerButton.classList.add("selectedTool");
+  markerThickness = thickMarker;
+});
+
+// another div to seperate elements
+const div1 = document.createElement("div");
+div1.innerHTML = `<br>`;
+app.append(div1);
+
 // create canvas
 const canvas = document.createElement("canvas");
 canvas.id = "canvas";
@@ -67,9 +98,11 @@ const cursor = { active: false, x: 0, y: 0 };
 // line class (holds array of points with a display and drag method)
 class Line {
   points: { x: number; y: number }[];
+  thickness: number;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, thickness: number) {
     this.points = [{ x, y }];
+    this.thickness = thickness;
   }
 
   drag(x: number, y: number) {
@@ -77,6 +110,7 @@ class Line {
   }
 
   display(ctx: CanvasRenderingContext2D) {
+    ctx.lineWidth = this.thickness;
     if (this.points.length) {
       ctx.beginPath();
       const [firstPoint, ...remainingPoints] = this.points;
@@ -124,7 +158,7 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = getMouseX(canvas, e);
   cursor.y = getMouseY(canvas, e);
-  currLine = new Line(cursor.x, cursor.y);
+  currLine = new Line(cursor.x, cursor.y, markerThickness);
   lines.push(currLine);
   redoLines.splice(firstIndex, redoLines.length);
 

@@ -63,6 +63,12 @@ button {
   transition: border-color 0.25s;
 }
 
+.selectedTool {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 button:hover {
   border-color: #646cff;
 }
