@@ -109,7 +109,7 @@ class Cursor {
   draw(ctx: CanvasRenderingContext2D) {
     this.size = markerThickness * 3 + 10;
     ctx.font = this.size + "px monospace";
-    ctx.fillText("⚬", this.x - this.size / 4, this.y + this.size / 2);
+    ctx.fillText("⚬", this.x - this.size / 4, this.y + this.size / 4);
   }
 }
 
