@@ -37,19 +37,17 @@ h1 {
   line-height: 1.1;
 }
 
-#canvas {
-  height: 256px;
-  width: 256px;
-  border: black 3px solid;
-  border-radius: 25px;
-  cursor: none;
-}
-
 #app {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+}
+
+#canvas {
+  border: black 3px solid;
+  border-radius: 25px;
+  cursor: none;
 }
 
 button {

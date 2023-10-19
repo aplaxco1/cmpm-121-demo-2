@@ -132,6 +132,8 @@ app.append(div2);
 // create canvas
 const canvas = document.createElement("canvas");
 canvas.id = "canvas";
+canvas.height = 256;
+canvas.width = 256;
 app.append(canvas);
 
 // ---- DRAWING STUFF ----//
