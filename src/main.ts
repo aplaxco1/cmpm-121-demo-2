@@ -235,6 +235,25 @@ redoButton.addEventListener("click", () => {
   }
 });
 
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "export";
+app.append(exportButton);
+
+exportButton.addEventListener("click", () => {
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportctx = exportCanvas.getContext("2d");
+  exportctx!.scale(4, 4);
+  for (const command of commands) {
+    command.display(exportctx!);
+  }
+  const anchor = document.createElement("a");
+  anchor.href = exportCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
+});
+
 createSeparator();
 
 // marker buttons //
