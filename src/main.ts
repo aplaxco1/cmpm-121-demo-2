@@ -16,118 +16,16 @@ let usingSticker = false;
 
 document.title = gameName;
 
+function createSeparator() {
+  const div = document.createElement("div");
+  div.innerHTML = `<br>`;
+  app.append(div);
+}
+
 // create header
 const header = document.createElement("h1");
 header.innerHTML = gameName;
 app.append(header);
-
-// clear button
-const clearButton = document.createElement("button");
-clearButton.innerHTML = "clear";
-app.append(clearButton);
-
-clearButton.addEventListener("click", () => {
-  commands.splice(firstIndex, commands.length);
-  canvas.dispatchEvent(drawingChangedEvent);
-});
-
-// undo button
-const undoButton = document.createElement("button");
-undoButton.innerHTML = "undo";
-app.append(undoButton);
-
-undoButton.addEventListener("click", () => {
-  if (commands.length) {
-    redoCommands.push(commands.pop()!);
-    canvas.dispatchEvent(drawingChangedEvent);
-  }
-});
-
-// redo button
-const redoButton = document.createElement("button");
-redoButton.innerHTML = "redo";
-app.append(redoButton);
-
-redoButton.addEventListener("click", () => {
-  if (redoCommands.length) {
-    commands.push(redoCommands.pop()!);
-    canvas.dispatchEvent(drawingChangedEvent);
-  }
-});
-
-// div to seperate elements
-const div = document.createElement("div");
-div.innerHTML = `<br>`;
-app.append(div);
-
-// marker buttons //
-const thinMarkerButton = document.createElement("button");
-thinMarkerButton.innerHTML = "thin";
-thinMarkerButton.classList.add("selectedTool");
-app.append(thinMarkerButton);
-
-thinMarkerButton.addEventListener("click", () => {
-  thickMarkerButton.classList.remove("selectedTool");
-  thinMarkerButton.classList.add("selectedTool");
-  disableStickerButtons(null);
-  usingSticker = false;
-  currentStickerText = "⚬";
-  markerThickness = thinMarker;
-});
-
-const thickMarkerButton = document.createElement("button");
-thickMarkerButton.innerHTML = "thick";
-app.append(thickMarkerButton);
-
-thickMarkerButton.addEventListener("click", () => {
-  thinMarkerButton.classList.remove("selectedTool");
-  thickMarkerButton.classList.add("selectedTool");
-  disableStickerButtons(null);
-  usingSticker = false;
-  currentStickerText = "⚬";
-  markerThickness = thickMarker;
-});
-
-// another div to seperate elements
-const div1 = document.createElement("div");
-div1.innerHTML = `<br>`;
-app.append(div1);
-
-// create sticker buttons and events
-const stickerText: string[] = ["☕", "🍩", "🍦"];
-const stickerButtons: HTMLButtonElement[] = [];
-
-for (let i = firstIndex; i < stickerText.length; i++) {
-  const button = document.createElement("button");
-  button.innerHTML = stickerText[i];
-
-  button.addEventListener("click", () => {
-    button.classList.add("selectedTool");
-    disableStickerButtons(button.innerHTML);
-    thinMarkerButton.classList.remove("selectedTool");
-    thickMarkerButton.classList.remove("selectedTool");
-    markerThickness = 2;
-    usingSticker = true;
-    currentStickerText = button.innerHTML;
-    canvas.dispatchEvent(toolMovedEvent);
-  });
-
-  stickerButtons.push(button);
-  app.append(button);
-}
-
-function disableStickerButtons(currSticker: string | null): void {
-  for (const sticker of stickerButtons) {
-    if (sticker.innerHTML != currSticker) {
-      sticker.classList.remove("selectedTool");
-    }
-  }
-}
-
-// another div to seperate elements
-const div2 = document.createElement("div");
-div2.innerHTML = `<br>`;
-app.append(div2);
 
 // create canvas
 const canvas = document.createElement("canvas");
@@ -138,7 +36,18 @@ app.append(canvas);
 
 // ---- DRAWING STUFF ----//
 const ctx = canvas.getContext("2d");
-const rect = canvas.getBoundingClientRect();
+
+// calculates correct mouse X position on canvas
+function getMouseX(canvas: HTMLCanvasElement, e: MouseEvent) {
+  const rect = canvas.getBoundingClientRect();
+  return ((e.clientX - rect.left) / rect.width) * canvas.width;
+}
+
+// calculates correct mouse y position on canvas
+function getMouseY(canvas: HTMLCanvasElement, e: MouseEvent) {
+  const rect = canvas.getBoundingClientRect();
+  return ((e.clientY - rect.top) / rect.height) * canvas.height;
+}
 
 // cursor object
 let cursor: Cursor | null = null;
@@ -223,16 +132,6 @@ class Sticker {
   }
 }
 
-// calculates mouse X position on canvas
-function getMouseX(canvas: HTMLCanvasElement, e: MouseEvent) {
-  return ((e.clientX - rect.left) / rect.width) * canvas.width;
-}
-
-// calculates mouse y position on canvas
-function getMouseY(canvas: HTMLCanvasElement, e: MouseEvent) {
-  return ((e.clientY - rect.top) / rect.height) * canvas.height;
-}
-
 // redraws canvas on drawing changed event
 const drawingChangedEvent = new Event("drawing-changed");
 const toolMovedEvent = new Event("tool-moved");
@@ -299,3 +198,116 @@ document.addEventListener("mouseup", () => {
 
   canvas.dispatchEvent(drawingChangedEvent);
 });
+
+createSeparator();
+
+// clear button
+const clearButton = document.createElement("button");
+clearButton.innerHTML = "clear";
+app.append(clearButton);
+
+clearButton.addEventListener("click", () => {
+  commands.splice(firstIndex, commands.length);
+  canvas.dispatchEvent(drawingChangedEvent);
+});
+
+// undo button
+const undoButton = document.createElement("button");
+undoButton.innerHTML = "undo";
+app.append(undoButton);
+
+undoButton.addEventListener("click", () => {
+  if (commands.length) {
+    redoCommands.push(commands.pop()!);
+    canvas.dispatchEvent(drawingChangedEvent);
+  }
+});
+
+// redo button
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "redo";
+app.append(redoButton);
+
+redoButton.addEventListener("click", () => {
+  if (redoCommands.length) {
+    commands.push(redoCommands.pop()!);
+    canvas.dispatchEvent(drawingChangedEvent);
+  }
+});
+
+createSeparator();
+
+// marker buttons //
+const thinMarkerButton = document.createElement("button");
+thinMarkerButton.innerHTML = "thin";
+thinMarkerButton.classList.add("selectedTool");
+app.append(thinMarkerButton);
+
+thinMarkerButton.addEventListener("click", () => {
+  thickMarkerButton.classList.remove("selectedTool");
+  thinMarkerButton.classList.add("selectedTool");
+  disableStickerButtons(null);
+  usingSticker = false;
+  currentStickerText = "⚬";
+  markerThickness = thinMarker;
+});
+
+const thickMarkerButton = document.createElement("button");
+thickMarkerButton.innerHTML = "thick";
+app.append(thickMarkerButton);
+
+thickMarkerButton.addEventListener("click", () => {
+  thinMarkerButton.classList.remove("selectedTool");
+  thickMarkerButton.classList.add("selectedTool");
+  disableStickerButtons(null);
+  usingSticker = false;
+  currentStickerText = "⚬";
+  markerThickness = thickMarker;
+});
+
+createSeparator();
+
+// create sticker buttons and events
+const stickerText: string[] = ["☕", "🍩", "🍦"];
+const stickerButtons: HTMLButtonElement[] = [];
+
+for (let i = firstIndex; i < stickerText.length; i++) {
+  addStickerButton(stickerText[i]);
+}
+
+function disableStickerButtons(currSticker: string | null): void {
+  for (const sticker of stickerButtons) {
+    if (sticker.innerHTML != currSticker) {
+      sticker.classList.remove("selectedTool");
+    }
+  }
+}
+
+const customStickerButton = document.createElement("button");
+customStickerButton.innerHTML = "custom";
+
+customStickerButton.addEventListener("click", () => {
+  const text = prompt("Custom Sticker Text", "🙂");
+  addStickerButton(text!);
+});
+
+app.append(customStickerButton);
+
+function addStickerButton(sticker: string) {
+  const button = document.createElement("button");
+  button.innerHTML = sticker;
+
+  button.addEventListener("click", () => {
+    button.classList.add("selectedTool");
+    disableStickerButtons(button.innerHTML);
+    thinMarkerButton.classList.remove("selectedTool");
+    thickMarkerButton.classList.remove("selectedTool");
+    markerThickness = 2;
+    usingSticker = true;
+    currentStickerText = button.innerHTML;
+    canvas.dispatchEvent(toolMovedEvent);
+  });
+
+  stickerButtons.push(button);
+  app.append(button);
+}
