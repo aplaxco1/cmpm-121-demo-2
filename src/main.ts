@@ -5,19 +5,22 @@ const app: HTMLDivElement = document.querySelector("#app")!;
 // global variables
 const gameName = "Autumn's Sketch Pad";
 
-const firstIndex = 0;
-const canvasCorner = 0;
 const thinMarker = 1;
 const thickMarker = 4;
+const stickerCursorSize = 2;
 
 let markerThickness = thinMarker;
 let currentStickerText = "⚬";
 let usingSticker = false;
+let currColor = "rgb(0, 0, 0)";
 
+const firstIndex = 0;
+const canvasCorner = 0;
 const centerCursorRatio = 4;
 const cursorSizeOffset = 10;
 const cursorSizeRatio = 3;
 const scaleDrawingRatio = 4;
+const maxColorCode = 256;
 
 document.title = gameName;
 
@@ -72,6 +75,9 @@ class Cursor {
 
   draw(ctx: CanvasRenderingContext2D) {
     this.size = this.cursorSize();
+    if (!usingSticker) {
+      ctx.fillStyle = currColor;
+    }
     ctx.font = this.size + "px monospace";
     ctx.fillText(
       this.text,
@@ -94,10 +100,12 @@ const redoCommands: (Line | Sticker)[] = [];
 class Line {
   points: { x: number; y: number }[];
   size: number;
+  color: string;
 
-  constructor(x: number, y: number, size: number) {
+  constructor(x: number, y: number, size: number, color: string) {
     this.points = [{ x, y }];
     this.size = size;
+    this.color = color;
   }
 
   drag(x: number, y: number) {
@@ -106,6 +114,7 @@ class Line {
 
   display(ctx: CanvasRenderingContext2D) {
     ctx.lineWidth = this.size;
+    ctx.strokeStyle = this.color;
     if (this.points.length) {
       ctx.beginPath();
       const [firstPoint, ...remainingPoints] = this.points;
@@ -123,11 +132,13 @@ class Sticker {
   points: { x: number; y: number }[];
   size: number;
   text: string;
+  color: string;
 
-  constructor(x: number, y: number, text: string) {
+  constructor(x: number, y: number, text: string, color: string) {
     this.points = [{ x, y }];
     this.text = text;
     this.size = 24;
+    this.color = color;
   }
 
   drag(x: number, y: number) {
@@ -184,9 +195,14 @@ canvas.addEventListener("mousedown", (e) => {
   cursor!.x = getMouseX(canvas, e);
   cursor!.y = getMouseY(canvas, e);
   if (usingSticker) {
-    currCommand = new Sticker(cursor!.x, cursor!.y, currentStickerText);
+    currCommand = new Sticker(
+      cursor!.x,
+      cursor!.y,
+      currentStickerText,
+      currColor
+    );
   } else {
-    currCommand = new Line(cursor!.x, cursor!.y, markerThickness);
+    currCommand = new Line(cursor!.x, cursor!.y, markerThickness, currColor);
   }
   commands.push(currCommand);
   redoCommands.splice(firstIndex, redoCommands.length);
@@ -282,6 +298,7 @@ thinMarkerButton.addEventListener("click", () => {
   usingSticker = false;
   currentStickerText = "⚬";
   markerThickness = thinMarker;
+  setColor();
 });
 
 const thickMarkerButton = document.createElement("button");
@@ -295,6 +312,7 @@ thickMarkerButton.addEventListener("click", () => {
   usingSticker = false;
   currentStickerText = "⚬";
   markerThickness = thickMarker;
+  setColor();
 });
 
 createSeparator();
@@ -349,7 +367,7 @@ function addStickerButton(sticker: string) {
     disableStickerButtons(button.innerHTML);
     thinMarkerButton.classList.remove("selectedTool");
     thickMarkerButton.classList.remove("selectedTool");
-    markerThickness = 2;
+    markerThickness = stickerCursorSize;
     usingSticker = true;
     currentStickerText = button.innerHTML;
     canvas.dispatchEvent(toolChangedEvent);
@@ -357,4 +375,15 @@ function addStickerButton(sticker: string) {
 
   stickerButtons.push(button);
   app.append(button);
+}
+
+function setColor() {
+  currColor =
+    `rgb(` +
+    Math.floor(Math.random() * maxColorCode) +
+    `,` +
+    Math.floor(Math.random() * maxColorCode) +
+    `,` +
+    Math.floor(Math.random() * maxColorCode) +
+    `)`;
 }

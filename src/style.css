@@ -64,8 +64,6 @@ button {
 
 .selectedTool {
   opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
 }
 
 button:hover {
