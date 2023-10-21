@@ -14,6 +14,11 @@ let markerThickness = thinMarker;
 let currentStickerText = "⚬";
 let usingSticker = false;
 
+const centerCursorRatio = 4;
+const cursorSizeOffset = 10;
+const cursorSizeRatio = 3;
+const scaleDrawingRatio = 4;
+
 document.title = gameName;
 
 function createSeparator() {
@@ -61,14 +66,22 @@ class Cursor {
   constructor(x: number, y: number, text: string) {
     this.x = x;
     this.y = y;
-    this.size = markerThickness * 3 + 10;
+    this.size = this.cursorSize();
     this.text = text;
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    this.size = markerThickness * 3 + 10;
+    this.size = this.cursorSize();
     ctx.font = this.size + "px monospace";
-    ctx.fillText(this.text, this.x - this.size / 4, this.y + this.size / 4);
+    ctx.fillText(
+      this.text,
+      this.x - this.size / centerCursorRatio,
+      this.y + this.size / centerCursorRatio
+    );
+  }
+
+  cursorSize() {
+    return markerThickness * cursorSizeRatio + cursorSizeOffset;
   }
 }
 
@@ -126,21 +139,21 @@ class Sticker {
     ctx.font = this.size + "px monospace";
     ctx.fillText(
       this.text,
-      this.points[firstIndex].x,
-      this.points[firstIndex].y
+      this.points[firstIndex].x - this.size / centerCursorRatio,
+      this.points[firstIndex].y + this.size / centerCursorRatio
     );
   }
 }
 
 // redraws canvas on drawing changed event
 const drawingChangedEvent = new Event("drawing-changed");
-const toolMovedEvent = new Event("tool-moved");
+const toolChangedEvent = new Event("tool-changed");
 
 canvas.addEventListener("drawing-changed", () => {
   redraw();
 });
 
-canvas.addEventListener("tool-moved", () => {
+canvas.addEventListener("tool-changed", () => {
   redraw();
 });
 
@@ -154,7 +167,7 @@ function redraw() {
 
 canvas.addEventListener("mouseout", () => {
   cursor = null;
-  canvas.dispatchEvent(toolMovedEvent);
+  canvas.dispatchEvent(toolChangedEvent);
 });
 
 canvas.addEventListener("mouseenter", (e) => {
@@ -163,7 +176,7 @@ canvas.addEventListener("mouseenter", (e) => {
     getMouseY(canvas, e),
     currentStickerText
   );
-  canvas.dispatchEvent(toolMovedEvent);
+  canvas.dispatchEvent(toolChangedEvent);
 });
 
 // mouse event to start drawing
@@ -244,7 +257,7 @@ exportButton.addEventListener("click", () => {
   exportCanvas.width = 1024;
   exportCanvas.height = 1024;
   const exportctx = exportCanvas.getContext("2d");
-  exportctx!.scale(4, 4);
+  exportctx!.scale(scaleDrawingRatio, scaleDrawingRatio);
   for (const command of commands) {
     command.display(exportctx!);
   }
@@ -287,11 +300,11 @@ thickMarkerButton.addEventListener("click", () => {
 createSeparator();
 
 // create sticker buttons and events
-const stickerText: string[] = ["☕", "🍩", "🍦"];
+const stickerOptions: string[] = ["☕", "🍩", "🥞", "🥓", "🍳"];
 const stickerButtons: HTMLButtonElement[] = [];
 
-for (let i = firstIndex; i < stickerText.length; i++) {
-  addStickerButton(stickerText[i]);
+for (let i = firstIndex; i < stickerOptions.length; i++) {
+  addStickerButton(stickerOptions[i]);
 }
 
 function disableStickerButtons(currSticker: string | null): void {
@@ -306,8 +319,23 @@ const customStickerButton = document.createElement("button");
 customStickerButton.innerHTML = "custom";
 
 customStickerButton.addEventListener("click", () => {
-  const text = prompt("Custom Sticker Text", "🙂");
-  addStickerButton(text!);
+  let text = prompt("Custom Sticker Text", "🙂");
+  if (text == "") {
+    text = "🙂";
+  }
+  // dont add duplicate stickers
+  let stickerAlreadyExists = false;
+  for (const sticker of stickerOptions) {
+    if (sticker == text) {
+      stickerAlreadyExists = true;
+      break;
+    }
+  }
+  // add sticker only if not already an option
+  if (!stickerAlreadyExists) {
+    stickerOptions.push(text!);
+    addStickerButton(text!);
+  }
 });
 
 app.append(customStickerButton);
@@ -324,7 +352,7 @@ function addStickerButton(sticker: string) {
     markerThickness = 2;
     usingSticker = true;
     currentStickerText = button.innerHTML;
-    canvas.dispatchEvent(toolMovedEvent);
+    canvas.dispatchEvent(toolChangedEvent);
   });
 
   stickerButtons.push(button);
