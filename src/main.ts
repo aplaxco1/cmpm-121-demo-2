@@ -21,6 +21,7 @@ const cursorSizeOffset = 10;
 const cursorSizeRatio = 3;
 const scaleDrawingRatio = 4;
 const maxColorCode = 256;
+const standardColor = "rgb(0, 0, 0)";
 
 document.title = gameName;
 
@@ -76,7 +77,9 @@ class Cursor {
   draw(ctx: CanvasRenderingContext2D) {
     this.size = this.cursorSize();
     if (!usingSticker) {
-      ctx.fillStyle = currColor;
+      ctx.strokeStyle = currColor;
+    } else {
+      ctx.strokeStyle = standardColor;
     }
     ctx.font = this.size + "px monospace";
     ctx.fillText(
@@ -147,6 +150,7 @@ class Sticker {
   }
 
   display(ctx: CanvasRenderingContext2D) {
+    ctx.strokeStyle = this.color;
     ctx.font = this.size + "px monospace";
     ctx.fillText(
       this.text,
@@ -170,10 +174,10 @@ canvas.addEventListener("tool-changed", () => {
 
 function redraw() {
   ctx!.clearRect(canvasCorner, canvasCorner, canvas.width, canvas.height);
-  cursor?.draw(ctx!);
   for (const command of commands) {
     command.display(ctx!);
   }
+  cursor?.draw(ctx!);
 }
 
 canvas.addEventListener("mouseout", () => {
@@ -199,7 +203,7 @@ canvas.addEventListener("mousedown", (e) => {
       cursor!.x,
       cursor!.y,
       currentStickerText,
-      currColor
+      standardColor
     );
   } else {
     currCommand = new Line(cursor!.x, cursor!.y, markerThickness, currColor);
